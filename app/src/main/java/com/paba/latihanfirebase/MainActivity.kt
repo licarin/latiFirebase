@@ -59,6 +59,23 @@ class MainActivity : AppCompatActivity() {
             ReadData(db)
         }
 
+        _lvData.setOnItemLongClickListener { parent, view, position, id ->
+            val namaPro = data[position].get("pro")
+            if (namaPro != null) {
+                db.collection("tbprovinsi")
+                    .document(namaPro)
+                    .delete()
+                    .addOnSuccessListener {
+                        Log.d("Firebase", "Data Berhasil Dihapus")
+                        ReadData(db)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.d("Firebase", e.message.toString())
+                    }
+            }
+            true
+        }
+
     }
 
     fun ReadData(db: FirebaseFirestore) {
@@ -96,6 +113,7 @@ class MainActivity : AppCompatActivity() {
                 _etProvinsi.setText("")
                 _etIbukota.setText("")
                 Log.d("Firebase", "Data Berhasil Ditambahkan")
+                ReadData(db)
             }
             .addOnFailureListener {
                 Log.d("Firebase", it.message.toString())
