@@ -6,6 +6,7 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ListView
+import android.widget.SimpleAdapter
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -18,11 +19,13 @@ import kotlin.math.log
 class MainActivity : AppCompatActivity() {
     val db = Firebase.firestore
 
-    var DataProvinsi = ArrayList<dataProvinsi>()
-    lateinit var lvAdapter: ArrayAdapter<dataProvinsi>
+    var DataProvinsi = ArrayList<daftarProvinsi>()
+    lateinit var lvAdapter: SimpleAdapter
+    lateinit var _lvData: ListView
+    lateinit var _etProvinsi: EditText
+    lateinit var _etIbukota: EditText
 
-    lateinit var _etProvinsi : EditText
-    lateinit var _etIbukota : EditText
+    var data: MutableList<Map<String, String>> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,23 +36,60 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
         _etProvinsi = findViewById<EditText>(R.id.etProvinsi)
         _etIbukota = findViewById<EditText>(R.id.etIbukota)
         val _btnSimpan = findViewById<Button>(R.id.btSimpan)
-        val _lvData = findViewById<ListView>(R.id.lvData)
-        var DataProvinsi = ArrayList<dataProvinsi>()
+        _lvData = findViewById<ListView>(R.id.lvData)
 
-        lvAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, DataProvinsi)
+        lvAdapter = SimpleAdapter(
+            this,
+            data,
+            android.R.layout.simple_list_item_2,
+            arrayOf("Pro", "Ibu"),
+            intArrayOf(android.R.id.text1, android.R.id.text2)
+        )
         _lvData.adapter = lvAdapter
+
+        ReadData(db)
+
 
         _btnSimpan.setOnClickListener {
             TambahData(db, _etProvinsi.text.toString(), _etIbukota.text.toString())
+            ReadData(db)
         }
 
     }
 
+    fun ReadData(db: FirebaseFirestore) {
+        db.collection("tbprovinsi")
+            .get()
+            .addOnSuccessListener { result ->
+                DataProvinsi.clear()
+                for (document in result) {
+                    val readData = daftarProvinsi(
+                        document.data.get("provinsi").toString(),
+                        document.data.get("ibukota").toString()
+                    )
+                    DataProvinsi.add(readData)
+                }
+
+                data.clear()
+                DataProvinsi.forEach {
+                    val dt: MutableMap<String, String> = HashMap(2)
+                    dt["Pro"] = it.provinsi
+                    dt["Ibu"] = it.ibukota
+                    data.add(dt)
+                }
+                lvAdapter.notifyDataSetChanged()
+            }
+            .addOnFailureListener {
+                Log.d("Firebase", it.message.toString())
+            }
+    }
+
     fun TambahData(db: FirebaseFirestore, provinsi: String, ibukota: String) {
-        val dataBaru = dataProvinsi(provinsi, ibukota)
+        val dataBaru = daftarProvinsi(provinsi, ibukota)
         db.collection("tbprovinsi")
             .add(dataBaru)
             .addOnSuccessListener {

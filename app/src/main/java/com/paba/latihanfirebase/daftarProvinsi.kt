@@ -1,6 +1,6 @@
 package com.paba.latihanfirebase
 
-data class dataProvinsi(
+data class daftarProvinsi(
     var provinsi: String,
     var ibukota: String
 )
